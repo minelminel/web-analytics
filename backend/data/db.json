@@ -1,0 +1,19 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "username": "admin",
+            "password": "admin"
+        }
+    ],
+    "campaigns": [
+        {
+            "id": 1,
+            "user_id": 1,
+            "host": null,
+            "name": null,
+            "description": null
+        }
+    ],
+    "visits": []
+}

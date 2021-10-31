@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import json
 import logging
 from urllib.parse import urlparse
 
@@ -267,35 +268,31 @@ def visits_view(campaign_id=None):
     )
 
 
-if __name__ == "__main__":
-    db.drop_all()
+def startup():
+    log.debug("Creating database")
     db.create_all()
-    data = {
-        UserModel: [
-            {
-                "id": 1,
-                "username": "admin",
-                "password": "admin",
-            }
-        ],
-        CampaignModel: [
-            {
-                "id": 1,
-                "user_id": 1,
-                "host": None,
-                "name": None,
-                "description": None,
-            }
-        ],
-        VisitModel: [],
-    }
+    filepath = os.path.join("data", "db.json")
+    log.debug(f"Reading file: {filepath}")
+    with open(filepath, "r") as file:
+        data = json.load(file)
+    models = {m.__tablename__: m for m in (UserModel, CampaignModel, VisitModel)}
+    for table, rows in data.items():
+        log.debug(f"Hydrating: {table} ({len(rows)})")
+        model = models[table]
+        for row in rows:
+            try:
+                obj = model(**row)
+                db.session.add(obj)
+                db.session.commit()
+            except Exception as err:
+                log.error(err)
+    log.debug("Finished startup function, good luck!")
 
-    for model, entries in data.items():
-        log.debug(f"Hydrating: {model.__tablename__} ({len(entries)})")
-        for entry in entries:
-            obj = model(**entry)
-            db.session.add(obj)
-            db.session.commit()
+
+if __name__ == "__main__":
+    # This block only run in development
+    db.drop_all()
+    startup()
 
     import sys
 
