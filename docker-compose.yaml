@@ -13,6 +13,8 @@ services:
       app: "analytics"
     environment:
       SQLALCHEMY_DATABASE_URI: "postgresql://postgres:postgres@database:5432"
+    depends_on:
+      - database
   # redis:
   #   image: 'bitnami/redis:latest'
   #   ports:
@@ -55,6 +57,19 @@ services:
   #     - "./grafana/dashboards/:/etc/dashboards/"
   #   networks:
   #     - default
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    image: analytics-proxy
+    ports:
+      - 8080:80
+    depends_on:
+      - backend
+    labels:
+      app: "analytics"
+    networks:
+      - default
 networks:
   default:
 volumes:

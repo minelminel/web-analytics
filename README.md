@@ -6,10 +6,17 @@ ssh ec2
 sudo apt-get update -y
 sudo apt-get upgrade -y
 sudo apt-get install -y python3-pip docker.io docker-compose
-```
+sudo groupadd docker
+sudo usermod -aG docker $USER
 
-## TO DO
-- add validation to visit persistence based on configured hostname (default remote spoofing from extracted url/credentials)
+cd /opt
+sudo mkdir web-analytics
+sudo chown -R ubuntu:ubuntu /opt/web-analytics
+cd web-analytics
+git clone https://github.com/minelminel/web-analytics.git .
+docker-compose build
+docker-compose up -d
+```
 
 ---
 ## Data Models
