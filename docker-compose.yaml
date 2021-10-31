@@ -63,9 +63,10 @@ services:
       dockerfile: Dockerfile
     image: analytics-proxy
     ports:
-      - 8080:80
+      - 80:80
     depends_on:
       - backend
+      - grafana
     labels:
       app: "analytics"
     networks:
