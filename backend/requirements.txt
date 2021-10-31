@@ -1,0 +1,10 @@
+flask
+flask-sqlalchemy
+flask-cors
+flask-restful
+marshmallow-sqlalchemy
+flask-marshmallow
+psycopg2-binary
+python-dotenv
+# celery
+# redis

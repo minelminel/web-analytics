@@ -1,0 +1,61 @@
+## $ docker-compose up --build
+## $ docker-compose down --remove-orphans
+version: "2.1"
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: analytics-backend
+    ports:
+      - 5000:5000
+    labels:
+      app: "analytics"
+    environment:
+      SQLALCHEMY_DATABASE_URI: "postgresql://postgres:postgres@database:5432"
+  # redis:
+  #   image: 'bitnami/redis:latest'
+  #   ports:
+  #     - 6379:6379
+  #   environment:
+  #     ALLOW_EMPTY_PASSWORD: "yes"
+  #   networks:
+  #     - default
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    image: analytics-database
+    ports:
+      - 5432:5432
+    labels:
+      app: "analytics"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    networks:
+      - default
+  # grafana:
+  #   build:
+  #     context: ./grafana
+  #     dockerfile: Dockerfile
+  #   image: analytics-grafana
+  #   ports:
+  #     - 3001:3001
+  #   depends_on:
+  #     - database
+  #   labels:
+  #     app: "analytics"
+  #   environment:
+  #     GF_LOG_LEVEL: "info"
+  #     GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+  #   volumes:
+  #     - "./grafana/dashboards/:/etc/dashboards/"
+  #   networks:
+  #     - default
+networks:
+  default:
+volumes:
+  postgres_data:

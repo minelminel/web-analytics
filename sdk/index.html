@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDK Test Page</title>
+</head>
+<body>
+  <h1>SDK Test Page</h1>
+  <textarea id="response" rows="4" cols="100"></textarea>
+  <script type="text/javascript" src="http://localhost:5000/static/sdk.js"></script>
+  <script type="text/javascript">
+    analytics({host: "http://localhost:5000", campaign: 1}).then((data) => {
+      document.getElementById("response").innerHTML = `// Response\n${JSON.stringify(data, null, 2)}`
+    })
+  </script>
+</body>
+</html>
