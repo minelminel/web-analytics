@@ -39,24 +39,24 @@ services:
       POSTGRES_PASSWORD: "postgres"
     networks:
       - default
-  # grafana:
-  #   build:
-  #     context: ./grafana
-  #     dockerfile: Dockerfile
-  #   image: analytics-grafana
-  #   ports:
-  #     - 3001:3001
-  #   depends_on:
-  #     - database
-  #   labels:
-  #     app: "analytics"
-  #   environment:
-  #     GF_LOG_LEVEL: "info"
-  #     GF_INSTALL_PLUGINS: "grafana-piechart-panel"
-  #   volumes:
-  #     - "./grafana/dashboards/:/etc/dashboards/"
-  #   networks:
-  #     - default
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    image: analytics-grafana
+    ports:
+      - 3001:3001
+    depends_on:
+      - database
+    labels:
+      app: "analytics"
+    environment:
+      GF_LOG_LEVEL: "info"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+    volumes:
+      - "./grafana/dashboards/:/etc/dashboards/"
+    networks:
+      - default
   proxy:
     build:
       context: ./proxy

@@ -22,7 +22,7 @@ const analytics = (overrides = {}) => {
       url: window.location.href,
       agent: navigator.userAgent,
       zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      time: Date.now(),
+      // time: Math.floor(Date.now() / 1000),
       screen: `${window.screen.width}x${window.screen.height}`,
     }
     return kwargs

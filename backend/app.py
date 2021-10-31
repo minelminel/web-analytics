@@ -2,9 +2,13 @@ import os
 import re
 import sys
 import json
+import time
+import random
+import hashlib
 import logging
 from urllib.parse import urlparse
 
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -17,8 +21,10 @@ from marshmallow import (
     pre_load,
     EXCLUDE,
 )
+from passlib.apps import custom_app_context as password_context
 
 log = logging.getLogger(__name__)
+load_dotenv()
 
 
 class Config:
@@ -87,6 +93,14 @@ db = SQLAlchemy(app)
 ma = Marshmallow()
 
 
+def current_time():
+    return int(time.time())
+
+
+def sha256(string):
+    return hashlib.sha256(string.encode("utf-8")).hexdigest()
+
+
 class BaseSchema(ma.SQLAlchemyAutoSchema):
     """
     missing     used for deserialization (dump)
@@ -123,6 +137,7 @@ class BaseSchema(ma.SQLAlchemyAutoSchema):
 class BaseModel(db.Model):
     __abstract__ = True
     id = db.Column(db.Integer(), primary_key=True)
+    time = db.Column(db.Integer(), unique=False, nullable=False, default=current_time)
 
 
 class UserModel(BaseModel):
@@ -130,6 +145,10 @@ class UserModel(BaseModel):
 
     username = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(128), unique=False, nullable=False)
+
+    def hash_password(self, password):
+        log.info("Hashing password")
+        self.password = password_context.encrypt(password)
 
 
 class CampaignModel(BaseModel):
@@ -149,7 +168,6 @@ class VisitModel(BaseModel):
     url = db.Column(db.String(), unique=False, nullable=False)
     agent = db.Column(db.String(), unique=False, nullable=False)
     zone = db.Column(db.String(), unique=False, nullable=False)
-    time = db.Column(db.BigInteger(), unique=False, nullable=False)
     screen = db.Column(db.String(), unique=False, nullable=False)
 
 
@@ -158,6 +176,7 @@ class UserSchema(BaseSchema):
         model = UserModel
 
     id = fields.Int(dump_only=True)
+    time = fields.Int()
     username = fields.Str(
         required=True, allow_none=False, validate=validate.Length(max=32)
     )
@@ -174,6 +193,7 @@ class CampaignSchema(BaseSchema):
         model = CampaignModel
 
     id = fields.Int(dump_only=True)
+    time = fields.Int()
     user_id = fields.Int(required=True, allow_none=False)
     homepage = fields.Str(required=False, allow_none=True)
     name = fields.Str(required=False, allow_none=True)
@@ -185,6 +205,7 @@ class VisitSchema(BaseSchema):
         model = VisitModel
 
     id = fields.Int(dump_only=True)
+    time = fields.Int()
     ip = fields.Str()
     url = fields.Str()
     agent = fields.Str()
@@ -289,16 +310,37 @@ def startup():
             except Exception as err:
                 log.error(err)
     log.debug("Finished startup function, good luck!")
+    return data
 
 
 if __name__ == "__main__":
     # This block only run in development
     db.drop_all()
-    startup()
+    data = startup()
 
-    import sys
+    # spoof some site visits (makes assumptions regarding db.json)
+    schema = VisitSchema()
+    kwargs = dict(
+        campaign_id=data["campaigns"][0]["id"],
+        ip="127.0.0.1",
+        url="https://neetchy.com",
+        agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36",
+        zone="America/New_York",
+        screen="1920x1080",
+    )
+    now = current_time()
+    records = 0
+    days_ago = 3
+    timestamp = now - (60 * 60 * 24 * days_ago)
+    # increment from anywhere betweem 1s to 1h
+    random_increment = lambda: random.randint(1, 3600)
+    while timestamp <= now:
+        timestamp += random_increment()
+        obj = schema.load({**kwargs, "time": timestamp})
+        db.session.add(obj)
+        db.session.commit()
+        records += 1
+    log.debug(f"Added {records} mocked visit records in {current_time() - now} sec")
 
-    if "shell" in sys.argv:
-        pass
-    else:
+    if "shell" not in sys.argv:
         app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=True)
