@@ -5,7 +5,7 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_marshmallow import Marshmallow
@@ -242,6 +242,7 @@ def campaign_view(campaign_id=None):
 
 @app.route("/api/campaigns/<int:campaign_id>")
 def campaigns_view(campaign_id=None):
+    abort(403)
     if (
         campaign_id is None
         or not db.session.query(CampaignModel).filter_by(id=campaign_id).first()
@@ -256,6 +257,7 @@ def campaigns_view(campaign_id=None):
 
 @app.route("/api/visits/<int:campaign_id>")
 def visits_view(campaign_id=None):
+    abort(403)
     if (
         campaign_id is None
         or not db.session.query(CampaignModel).filter_by(id=campaign_id).first()
