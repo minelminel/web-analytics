@@ -1,3 +1,5 @@
+import os
+import re
 import sys
 import logging
 from urllib.parse import urlparse
@@ -16,6 +18,26 @@ from marshmallow import (
 )
 
 log = logging.getLogger(__name__)
+
+
+class Config:
+    def __init__(self, **overrides):
+        for key, value in overrides.items():
+            log.debug(f"Config override: {key} = {value}")
+            setattr(self, key, value)
+
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
+    LOG_FILE = os.getenv("LOG_FILE", None)
+    # CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379")
+    # CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379")
+    SQLALCHEMY_DATABASE_URI = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite:///:memory:")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    def to_dict(self):
+        pattern = r"\b[A-Z]+(_[A-Z]+)*\b"
+        return {
+            attr: getattr(self, attr) for attr in dir(self) if re.match(pattern, attr)
+        }
 
 
 def configure_logging(app):
@@ -49,16 +71,10 @@ def configure_logging(app):
 
 def create_app(**overrides):
     app = Flask(__name__)
-    app.config.update(
-        LOG_LEVEL="DEBUG",
-        LOG_FILE=None,
-        # CELERY_BROKER_URL="redis://localhost:6379",
-        # CELERY_RESULT_BACKEND="redis://localhost:6379",
-        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    )
-    app.config.update(overrides)
+    config = Config(**overrides)
+    app.config.from_object(config)
     configure_logging(app)
+    log.debug(config.to_dict())
     CORS(app)
     return app
 
